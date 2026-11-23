@@ -101,3 +101,23 @@ test('rejects non-canonical date strings', async () => {
     assert.equal((await post({ ...valid, transactionDate: d })).status, 400, d);
   }
 });
+
+test('plain 12-digit account number is accepted and stored dashed', async () => {
+  const res = await post({ ...valid, accountNumber: '123456789012' });
+  assert.equal(res.status, 201);
+  assert.equal((await res.json()).data.accountNumber, '1234-5678-9012');
+  assert.ok(lines().at(-1).includes(',1234-5678-9012,'));
+});
+test('dashed account number is accepted unchanged', async () => {
+  const res = await post({ ...valid, accountNumber: '1234-5678-9012' });
+  assert.equal((await res.json()).data.accountNumber, '1234-5678-9012');
+});
+test('leading zeros are preserved', async () => {
+  const body = await (await post({ ...valid, accountNumber: ' 000011112222 ' })).json();
+  assert.equal(body.data.accountNumber, '0000-1111-2222');
+});
+for (const bad of ['12345678901', '1234567890123', '1234-56789012', '1234 5678 9012', '12345678-9012', 'abcd-efgh-ijkl', '1234-5678-90123', '']) {
+  test(`rejects account number "${bad}"`, async () => assert.equal((await post({ ...valid, accountNumber: bad })).status, 400));
+}
+test('rejects account number sent as a JSON number', async () =>
+  assert.equal((await post({ ...valid, accountNumber: 123456789012 })).status, 400));
