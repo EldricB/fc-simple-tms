@@ -4,7 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-// Use a throwaway CSV so tests never touch real data
+// Use a throwaway CSV so tests never touch real data.
 const csvPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'tx-')), 'transactions.csv');
 process.env.CSV_PATH = csvPath;
 const app = require('../server');
@@ -33,7 +33,7 @@ const post = (body) =>
 const valid = { transactionDate: '2025-03-11', accountNumber: '1111-2222-3333', accountHolderName: "Test O'Neil", amount: 42.5 };
 const lines = () => fs.readFileSync(csvPath, 'utf8').trim().split('\n');
 
-// Basic sanity check that the server is running and returns JSON
+// Basic sanity check that the server is running and returns JSON.
 test('GET returns an empty list when the CSV does not exist', async () => {
   const res = await fetch(`${base}/transactions`);
   assert.equal(res.status, 200);

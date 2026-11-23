@@ -5,17 +5,17 @@ const isRealDate = (str) => {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === str;
 };
 
-const ACCOUNT_NUMBER_FORMAT = /^\d{4}-\d{4}-\d{4}$/;
-const ACCOUNT_HOLDER_NAME_FORMAT = /^\p{L}[\p{L}\p{M}\s.'’-]*$/u;
+const ACCOUNT_NUMBER_FORMAT = /^(\d{12}|\d{4}-\d{4}-\d{4})$/;
+const ACCOUNT_HOLDER_NAME_FORMAT = /^\p{L}[\p{L}\p{M}\s.\u0027\u2019-]*$/u;
 const AMOUNT_FORMAT = /^\d{1,9}(\.\d{1,2})?$/;
 
 /**
  * Validates and normalizes a POST body.
  * Returns { errors } on failure, or { errors: [], value } on success.
- * 
+ *
  * Expected format:
  * Date: YYYY-MM-DD
- * Account Number: 1234-5678-9012
+ * Account Number: 1234-5678-9012 or 123456789012
  * Account Holder Name: John Smith
  * Amount: 99.99
  */
@@ -28,14 +28,15 @@ const validateTransaction = (body) => {
   const { transactionDate, accountNumber, accountHolderName, amount } = body;
   const errors = [];
 
-if (typeof transactionDate !== 'string' || !isRealDate(transactionDate)) {
-  errors.push('Transaction date must be a valid date in YYYY-MM-DD format');
-}
-
-  const acct = typeof accountNumber === 'string' ? accountNumber.trim() : '';
-  if (!ACCOUNT_NUMBER_FORMAT.test(acct)) {
-    errors.push('Account number must be in the format 1234-5678-9012');
+  if (typeof transactionDate !== 'string' || !isRealDate(transactionDate)) {
+    errors.push('Transaction date must be a valid date in YYYY-MM-DD format');
   }
+
+  const rawAccountNumber = typeof accountNumber === 'string' ? accountNumber.trim() : '';
+  if (!ACCOUNT_NUMBER_FORMAT.test(rawAccountNumber)) {
+    errors.push('Account number must be 12 digits, with or without dashes (1234-5678-9012 or 123456789012)');
+  }
+  const acct = rawAccountNumber.replace(/-/g, '').replace(/(\d{4})(?=\d)/g, '$1-');
 
   const name = typeof accountHolderName === 'string' ? accountHolderName.trim().replace(/\s+/g, ' ') : '';
   if (!name || name.length > 100 || !ACCOUNT_HOLDER_NAME_FORMAT.test(name)) {
